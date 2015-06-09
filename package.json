@@ -7,7 +7,15 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Matt Kruse <github@mattkruse.com> (http://mattkruse.com/)",
-  "license": "ISC",
+  "keywords": ["icloud","iphone","find"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/matt-kruse/find-my-iphone.git"
+  },
+  "bugs": {
+    "url": "https://github.com/matt-kruse/find-my-iphone/issues"
+  },
+  "license": "MIT",
   "dependencies": {
     "request": "^2.57.0",
     "tough-cookie": "^1.2.0"
