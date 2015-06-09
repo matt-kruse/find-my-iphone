@@ -1,0 +1,15 @@
+{
+  "name": "find-my-iphone",
+  "version": "1.0.0",
+  "description": "Trigger Apple's Find My iPhone feature from code",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matt Kruse <github@mattkruse.com> (http://mattkruse.com/)",
+  "license": "ISC",
+  "dependencies": {
+    "request": "^2.57.0",
+    "tough-cookie": "^1.2.0"
+  }
+}
