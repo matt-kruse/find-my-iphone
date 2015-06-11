@@ -1,13 +1,17 @@
 {
   "name": "find-my-iphone",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Trigger Apple's Find My iPhone feature from code",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Matt Kruse <github@mattkruse.com> (http://mattkruse.com/)",
-  "keywords": ["icloud","iphone","find"],
+  "keywords": [
+    "icloud",
+    "iphone",
+    "find"
+  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/matt-kruse/find-my-iphone.git"
