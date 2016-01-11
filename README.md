@@ -1,45 +1,78 @@
-# find-my-iphone
+# Summary
 
-A Node module to trigger the "Find My iPhone" feature from iCloud, to play a sound on the phone
+This is a fork of the work created by Matt Kruse: https://github.com/matt-kruse/find-my-iphone
+I just added some convenience methods, so I can use this for more than just alerts.
+Since I use family sharing, I can use this to locate my wife and kids on the fly.
+
+# this fork
+
+1. Get the latitude / longitude of a device
+2. Send find my phone alerts
+3. Get the distance of a found device.
+4. Get the approximate address of a device.
 
 # Installation
 
 ```bash
-	npm install find-my-iphone
+	npm install git+https://github.com/jlippold/find-my-iphone.git
 ```
 
-# Summary
+# Run Tests
 
-This module exports a single function, which can be called to play a sound from the phone.
+`apple_id=someone@gmail.com apple_password=somePassword mocha test`
 
-It works by pretending to be a browser and actually logging into the iCloud service.
+# Example
 
-# Usage
+Here's a basic example using all the methods
 
 ```javascript
-var find = require('find-my-iphone');
 
-// Alert the first (or only) device on the account
-find('user@icloud.com', 'password');
+	var icloud = require("find-my-iphone").findmyphone;
 
-// Alert a specific device
-find('user@icloud.com', 'password', 'iPhone 6');
+	icloud.apple_id = "steve@jobs.com";
+	icloud.password = "oneMoreThing"; 
 
-// Callback when successful
-find('user@icloud.com', 'password', 'iPhone 6',function() {
-	console.log("Done!");
-});
+	icloud.getDevices(function(error, devices) {
+		var device;
+
+		if (error) {
+			throw error;
+		}
+		//pick a device with location and findMyPhone enabled
+		devices.forEach(function(d) {
+			if (device == undefined && d.location && d.lostModeCapable) {
+				device = d;
+			}
+		});
+
+		if (device) {
+
+			//gets the distance of the device from my location
+			var myLatitude = 51.525;
+			var myLongitude = 7.4575;
+
+			icloud.getDistanceOfDevice(device, myLatitude, myLongitude, function(err, miles) {
+				console.log(device.name + " is " + miles + " miles away!");
+			});
+
+			icloud.alertDevice(device.id, function(err) {
+				console.log("Beep Beep!");
+			});
+
+			icloud.getLocationOfDevice(device, function(err, location) {
+
+				var msg = [location.streetNumber,
+					location.streetName,
+					"in",
+					location.city,
+					location.state
+				].join(" ");
+
+				console.log(msg);
+			});
+		}
+	});
+
 ```
-
-# API
-
-```javascript
-find(email,password[,label[,callback]])
-```
-
- * email (required): The email address you use to login to iCloud
- * password (required): Your iCloud password
- * label (optional): The label of the phone you want to alert (iCloud accounts may have multiple devices). The label can be found under "All Devices" in the Find My iPhone app. If there are multiple phones with the same label, the last one matching will be alerted. You should rename devices to be unique.
- * callback (optional): A function to execute when the phone has been alerted
 
  
