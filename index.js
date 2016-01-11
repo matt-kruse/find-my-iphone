@@ -33,7 +33,16 @@ var findmyphone = {
 			findmyphone.base_path = body.webservices.findme.url;
 			options = {
 				url: findmyphone.base_path + "/fmipservice/client/web/initClient",
-				json: {}
+				json: {
+					"clientContext": {
+						"appName": "iCloud Find (Web)",
+						"appVersion": "2.0",
+						"timezone": "US/Eastern",
+						"inactiveTime": 3571,
+						"apiVersion": "3.0",
+						"fmly": true
+					}
+				}
 			};
 			findmyphone.iRequest.post(options, callback);
 		});
@@ -64,7 +73,7 @@ var findmyphone = {
 			}
 			return callback(err, res[0]);
 		});
-		
+
 	},
 	getDistanceOfDevice: function(device, myLatitude, myLongitude, callback) {
 		if (device.location) {
