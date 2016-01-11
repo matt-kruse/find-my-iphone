@@ -14,7 +14,7 @@ Since I use family sharing, I can use this to locate my wife and kids on the fly
 # Installation
 
 ```bash
-	npm install git+https://git@github.com/jlippold/find-my-phone.git
+	npm install git+https://github.com/jlippold/find-my-iphone.git
 ```
 
 # Run Tests
