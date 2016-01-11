@@ -1,50 +1,113 @@
-var toughCookie = require('tough-cookie');
-var request = require('request');
+var toughCookie = require("tough-cookie");
+var request = require("request");
+var geolib = require("geolib");
+var geocoder = require('node-geocoder')('openstreetmap', 'https');
 
-var handle_error = function(res) {
-	if (!res||res.statusCode!=200) {
-		throw res.statusMessage;
-	}
-}
-var find_my_iphone = function(apple_id,password,device_name,callback) {
-	var iRequest = request.defaults({jar: true,headers:{"Origin":"https://www.icloud.com"}});
-	iRequest.post({"url":'https://setup.icloud.com/setup/ws/1/login', json: {'apple_id':apple_id,'password':password}},
-		function(error,response,body) {
-			handle_error(response);
-			var url = body.webservices.findme.url;
-			iRequest.post({"url":url+"/fmipservice/client/web/initClient",json:{}},
-				function(error,response,body) {
-					handle_error(response);
-					var devices = {}, device, id;
-					// If no device is passed, take the first one
-					if (!device_name && body.content.length>0) {
-						console.log(body.content[0]);
-						id = body.content[0].id;
-					}
-					else {
-						// Retrieve each device on the account
-						body.content.forEach(function(device) {
-							if (device.name==device_name) {
-								id = device.id;
-							}
-						});
-					}
-					if (id) {
-						iRequest.post({"url":url+"/fmipservice/client/web/playSound",json:{"subject":"Find My iPhone Alert","device":id}},
-							function(error,response,body) {
-								handle_error(response);
-								if (callback) {
-									callback();
-								}
-							}
-						);
-					}
-					else {
-						throw "Device ["+device_name+"] not found";
-					}
-				}
-			);
+var findmyphone = {
+	login: function(callback) {
+
+		findmyphone.iRequest = request.defaults({
+			jar: true,
+			headers: {
+				"Origin": "https://www.icloud.com"
+			}
+		});
+
+		if (findmyphone.apple_id == null || findmyphone.password == null) {
+			callback("Please define user / password");
 		}
-	);
+
+		var options = {
+			url: "https://setup.icloud.com/setup/ws/1/login",
+			json: {
+				"apple_id": findmyphone.apple_id,
+				"password": findmyphone.password
+			}
+		};
+
+		findmyphone.iRequest.post(options, function(error, response, body) {
+
+			if (!response || response.statusCode != 200) {
+				return callback(error);
+			}
+			findmyphone.base_path = body.webservices.findme.url;
+			options = {
+				url: findmyphone.base_path + "/fmipservice/client/web/initClient",
+				json: {}
+			};
+			findmyphone.iRequest.post(options, callback);
+		});
+	},
+	alertDevice: function(deviceId, callback) {
+
+		var options = {
+			url: findmyphone.base_path + "/fmipservice/client/web/playSound",
+			json: {
+				"subject": "Find My iPhone Alert",
+				"device": deviceId
+			}
+		};
+		findmyphone.iRequest.post(options, callback);
+	},
+	getLocationOfDevice: function(device, callback) {
+
+		if (!device.location) {
+			return callback("No location in device");
+		}
+
+		geocoder.reverse({
+			lat: device.location.latitude,
+			lon: device.location.longitude
+		}, function(err, res) {
+			if (res.length == 0 || err) {
+				return callback(err);
+			}
+			return callback(err, res[0]);
+		});
+		
+	},
+	getDistanceOfDevice: function(device, myLatitude, myLongitude, callback) {
+		if (device.location) {
+			var meters = geolib.getDistance({
+				latitude: myLatitude,
+				longitude: myLongitude
+			}, {
+				latitude: device.location.latitude,
+				longitude: device.location.longitude
+			});
+
+			callback(null, geolib.convertUnit("mi", meters, 0));
+		} else {
+			callback("No location found for this device");
+		}
+	},
+	getDevices: function(callback) {
+
+		findmyphone.login(function(error, response, body) {
+
+			if (!response || response.statusCode != 200) {
+				return callback(error);
+			}
+
+			var devices = [];
+			// Retrieve each device on the account
+			body.content.forEach(function(device) {
+				devices.push({
+					id: device.id,
+					name: device.name,
+					deviceModel: device.deviceModel,
+					modelDisplayName: device.modelDisplayName,
+					deviceDisplayName: device.deviceDisplayName,
+					batteryLevel: device.batteryLevel,
+					isLocating: device.isLocating,
+					lostModeCapable: device.lostModeCapable,
+					location: device.location
+				});
+			});
+
+			callback(error, devices);
+		});
+	}
 };
-module.exports = find_my_iphone;
+
+exports.findmyphone = findmyphone;
