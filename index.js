@@ -41,7 +41,7 @@ var findmyphone = {
 					});
 				} else {
 					console.log("reusing session");
-					return callback(err, d);
+					return callback(err, res, body);
 				}
 			});
 		}
