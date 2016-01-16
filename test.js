@@ -3,6 +3,7 @@ var assert = require("assert");
 
 //apple_id=someone@gmail.com apple_password=somePassword mocha test
 
+
 describe('Logging in', function() {
 	var device;
 
@@ -34,10 +35,7 @@ describe('Logging in', function() {
 			assert(device);
 			done();
 		});
-
 	});
-
-
 
 	it('should get distance in miles', function(done) {
 		icloud.getDistanceOfDevice(device, 51.525, 7.4575, function(err, miles) {
@@ -47,8 +45,8 @@ describe('Logging in', function() {
 		});
 	});
 
-
 	it('should send alert', function(done) {
+		this.timeout(30000);
 		icloud.alertDevice(device.id, function(error) {
 			assert(!error);
 			done();
@@ -56,6 +54,7 @@ describe('Logging in', function() {
 	});
 
 	it('should get location', function(done) {
+		this.timeout(30000);
 		icloud.getLocationOfDevice(device, function(error, location) {
 			assert(!error);
 			assert(location);
@@ -63,4 +62,16 @@ describe('Logging in', function() {
 		});
 	});
 
+	
+	describe('should alert with legacy api', function() {
+		this.timeout(30000);
+		var find = require('./index');
+		it('should send legacy alert', function(done) {
+			find(icloud.apple_id, icloud.password, null, function(error) {
+				assert(!error);
+				done();
+			});
+		});
+	});
+	
 });

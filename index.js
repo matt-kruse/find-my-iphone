@@ -48,7 +48,7 @@ var findmyphone = {
 		});
 	},
 	alertDevice: function(deviceId, callback) {
-
+		console.log(deviceId);
 		var options = {
 			url: findmyphone.base_path + "/fmipservice/client/web/playSound",
 			json: {
@@ -119,4 +119,49 @@ var findmyphone = {
 	}
 };
 
-exports.findmyphone = findmyphone;
+// legacy
+var find_my_iphone = function(apple_id, password, device_name, callback) {
+
+	findmyphone.apple_id = apple_id;
+	findmyphone.password = password;
+
+	findmyphone.getDevices(function(error, devices) {
+		if (error) {
+			throw error;
+		}
+
+		var device;
+		if (devices.length > 0) {
+			if (device_name) {
+				devices.forEach(function(d) {
+					if (device_name) {
+						if (device_name == d.name && d.lostModeCapable) {
+							device = d;
+						}
+					} else {
+						if (!device && d.lostModeCapable) {
+							device = d;
+						}
+					}
+				});
+			}
+		}
+
+		if (device) {
+			findmyphone.alertDevice(device.id, function(err) {
+				if (err) {
+					throw err;
+				}
+				if (callback) {
+					callback(err);
+				}
+			});
+		} else {
+			throw "Device [" + device_name + "] not found";
+		}
+	});
+};
+
+
+find_my_iphone.findmyphone = findmyphone;
+module.exports = find_my_iphone;

@@ -1,25 +1,22 @@
-# Summary
+# find-my-iphone
 
-This is a fork of the work created by Matt Kruse: https://github.com/matt-kruse/find-my-iphone
-I just added some convenience methods, so I can use this for more than just alerts.
-Since I use family sharing, I can use this to locate my wife and kids on the fly.
+A Node module to interact with iCloud to do the following:
 
-# this fork
-
-1. Get the latitude / longitude of a device
+1. Get the latitude / longitude of an iCloud device
 2. Send find my phone alerts
 3. Get the distance of a found device.
 4. Get the approximate address of a device.
 
+
 # Installation
 
 ```bash
-	npm install git+https://github.com/jlippold/find-my-iphone.git
+	npm install find-my-iphone
 ```
 
-# Run Tests
+# Summary
 
-`apple_id=someone@gmail.com apple_password=somePassword mocha test`
+This module can alert the find my phone webservice, this also works with family sharing, so you can track family members on the fly. It works by pretending to be a browser and actually logging into the iCloud service.
 
 # Example
 
@@ -74,5 +71,37 @@ Here's a basic example using all the methods
 	});
 
 ```
+
+# Legacy API
+
+```javascript
+var find = require('find-my-iphone');
+
+// Alert the first (or only) device on the account
+find('user@icloud.com', 'password');
+
+// Alert a specific device
+find('user@icloud.com', 'password', 'iPhone 6');
+
+// Callback when successful
+find('user@icloud.com', 'password', 'iPhone 6',function() {
+	console.log("Done!");
+});
+```
+```javascript
+find(email,password[,label[,callback]])
+```
+
+
+ * email (required): The email address you use to login to iCloud
+ * password (required): Your iCloud password
+ * label (optional): The label of the phone you want to alert (iCloud accounts may have multiple devices). The label can be found under "All Devices" in the Find My iPhone app. If there are multiple phones with the same label, the last one matching will be alerted. You should rename devices to be unique.
+ * callback (optional): A function to execute when the phone has been alerted
+ 
+# Tests
+
+`apple_id=someone@gmail.com apple_password=somePassword mocha test`
+
+
 
  
