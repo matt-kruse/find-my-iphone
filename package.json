@@ -21,8 +21,6 @@
   },
   "license": "MIT",
   "dependencies": {
-    "geolib": "^2.0.18",
-    "node-geocoder": "^3.6.0",
     "request": "^2.57.0",
     "tough-cookie": "^1.2.0"
   }

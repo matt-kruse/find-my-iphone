@@ -1,7 +1,6 @@
 var toughCookie = require("tough-cookie");
 var request = require("request");
-var geolib = require("geolib");
-var geocoder = require('node-geocoder')('openstreetmap', 'https');
+var util = require("util");
 
 var findmyphone = {
 	login: function(callback) {
@@ -48,7 +47,6 @@ var findmyphone = {
 		});
 	},
 	alertDevice: function(deviceId, callback) {
-		console.log(deviceId);
 		var options = {
 			url: findmyphone.base_path + "/fmipservice/client/web/playSound",
 			json: {
@@ -64,28 +62,55 @@ var findmyphone = {
 			return callback("No location in device");
 		}
 
-		geocoder.reverse({
-			lat: device.location.latitude,
-			lon: device.location.longitude
-		}, function(err, res) {
-			if (res.length == 0 || err) {
-				return callback(err);
+		var googleUrl = "http://maps.googleapis.com/maps/api/geocode/json" +
+			"?latlng=%d,%d&sensor=true";
+
+		googleUrl =
+			util.format(googleUrl,
+				device.location.latitude, device.location.longitude);
+
+		var req = {
+			url: googleUrl,
+			json: true
+		};
+
+		request(req, function(err, response, json) {
+			if (!err && response.statusCode == 200) {
+				if (Array.isArray(json.results) &&
+					json.results.length > 0 &&
+					json.results[0].hasOwnProperty("formatted_address")) {
+
+					return callback(err, json.results[0].formatted_address);
+				}
 			}
-			return callback(err, res[0]);
+			return callback(err);
 		});
 
 	},
 	getDistanceOfDevice: function(device, myLatitude, myLongitude, callback) {
 		if (device.location) {
-			var meters = geolib.getDistance({
-				latitude: myLatitude,
-				longitude: myLongitude
-			}, {
-				latitude: device.location.latitude,
-				longitude: device.location.longitude
+
+			var googleUrl = "http://maps.googleapis.com/maps/api/distancematrix/json" +
+				"?origins=%d,%d&destinations=%d,%d&mode=driving&sensor=false";
+
+			googleUrl =
+				util.format(googleUrl, myLatitude, myLongitude,
+					device.location.latitude, device.location.longitude);
+
+			var req = {
+				url: googleUrl,
+				json: true
+			};
+
+			request(req, function(err, response, json) {
+				if (!err && response.statusCode == 200) {
+					if (json && json.rows && json.rows.length > 0) {
+						return callback(err, json.rows[0].elements[0]);
+					}
+					return callback(err);
+				}
 			});
 
-			callback(null, geolib.convertUnit("mi", meters, 0));
 		} else {
 			callback("No location found for this device");
 		}

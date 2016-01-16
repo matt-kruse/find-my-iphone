@@ -45,11 +45,12 @@ Here's a basic example using all the methods
 		if (device) {
 
 			//gets the distance of the device from my location
-			var myLatitude = 51.525;
-			var myLongitude = 7.4575;
+			var myLatitude = 38.8977;
+			var myLongitude = -77.0366;
 
-			icloud.getDistanceOfDevice(device, myLatitude, myLongitude, function(err, miles) {
-				console.log(device.name + " is " + miles + " miles away!");
+			icloud.getDistanceOfDevice(device, myLatitude, myLongitude, function(err, result) {
+				console.log("Distance: " + result.distance.text);
+				console.log("Driving time: " + result.duration.text);
 			});
 
 			icloud.alertDevice(device.id, function(err) {
@@ -57,15 +58,7 @@ Here's a basic example using all the methods
 			});
 
 			icloud.getLocationOfDevice(device, function(err, location) {
-
-				var msg = [location.streetNumber,
-					location.streetName,
-					"in",
-					location.city,
-					location.state
-				].join(" ");
-
-				console.log(msg);
+				console.log(location);
 			});
 		}
 	});
