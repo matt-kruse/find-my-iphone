@@ -60,7 +60,7 @@ var findmyphone = {
 		findmyphone.iRequest.post(options, function(error, response, body) {
 
 			if (!response || response.statusCode != 200) {
-				return callback(error);
+				return callback("Login Error");
 			}
 
 			findmyphone.onLogin(body, function(err, resp, body) {
@@ -78,7 +78,7 @@ var findmyphone = {
 		findmyphone.iRequest.post(options, function(error, response, body) {
 
 			if (!response || response.statusCode != 200) {
-				return callback(error);
+				return callback("Could not refresh session");
 			}
 
 			findmyphone.onLogin(body, function(err, resp, body) {
