@@ -6,6 +6,7 @@ A Node module to interact with iCloud to do the following:
 2. Send find my phone alerts
 3. Get the distance of a found device.
 4. Get the approximate address of a device.
+5. Get the approximate driving time to a device.
 
 
 # Installation
