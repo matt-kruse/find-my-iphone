@@ -23,6 +23,7 @@ describe('Logged in: ', function() {
 
 		icloud.getDevices(function(error, devices) {
 			assert(!error);
+			assert(devices);
 			assert(devices.length > 0);
 			devices.forEach(function(d) {
 				if (device == undefined && d.location && d.lostModeCapable) {
