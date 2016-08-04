@@ -139,11 +139,11 @@ var findmyphone = {
 			callback(error, devices);
 		});
 	},
-	alertDevice: function(deviceId, callback) {
+	alertDevice: function(deviceId, callback, subject = "Amazon Echo Find My iPhone Alert") {
 		var options = {
 			url: findmyphone.base_path + "/fmipservice/client/web/playSound",
 			json: {
-				"subject": "Amazon Echo Find My iPhone Alert",
+				"subject": subject,
 				"device": deviceId
 			}
 		};
