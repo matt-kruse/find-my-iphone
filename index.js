@@ -81,7 +81,7 @@ var findmyphone = {
 				return callback("Could not refresh session");
 			}
 
-			findmyphone.onLogin(body, function(err, resp, body) {
+			findmyphone.onLogin(JSON.parse(body), function(err, resp, body) {
 				return callback(err, resp, body);
 			});
 
