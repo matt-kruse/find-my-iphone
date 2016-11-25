@@ -2,6 +2,7 @@ var request = require("request");
 var util = require("util");
 
 var findmyphone = {
+	var last_apple_id = null;
 	init: function(callback) {
 
 		if (!findmyphone.hasOwnProperty("apple_id") || !findmyphone.hasOwnProperty("password")) {
@@ -12,9 +13,10 @@ var findmyphone = {
 			return callback("Please define apple_id / password");
 		}
 
-		var newLogin = !findmyphone.hasOwnProperty("jar");
+		var newLogin = !findmyphone.hasOwnProperty("jar") && findmyphone.last_apple_id != findmyphone.apple_id;
 		if (newLogin) {
 			findmyphone.jar = request.jar();
+			findmyphone.last_apple_id = findmyphone.apple_id;
 		}
 
 		findmyphone.iRequest = request.defaults({
