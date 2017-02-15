@@ -30,6 +30,10 @@ Here's a basic example using all the methods
 	icloud.apple_id = "steve@jobs.com";
 	icloud.password = "oneMoreThing"; 
 
+	//optionally send path to save the cookie on disk
+	//if defined, you'll get less icloud email alerts
+	icloud.cookieFileStore = "icloud.cookie" 
+
 	icloud.getDevices(function(error, devices) {
 		var device;
 
