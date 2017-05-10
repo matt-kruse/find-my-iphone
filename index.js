@@ -115,8 +115,18 @@ var findmyphone = {
 
 		findmyphone.init(function(error, response, body) {
 
-			if (!response || response.statusCode != 200) {
-				return callback(error);
+			if (error) {
+				callback(error);
+			}
+
+			if (!response) {
+				return callback('Received no response from iCloud API.');
+			}
+
+		  	if (!response.statusCode !== 200) {
+				var errorMessage = 'iCloud request failed.\nStatus code: ' + response.statusCode;
+				errorMessage += body ? '\nResponse body: ' + body.content : '';
+				return callback(errorMessage);
 			}
 
 			var devices = [];
