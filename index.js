@@ -1,6 +1,6 @@
 var request = require("request");
 var util = require("util");
-var FileCookieStore = require("tough-cookie-filestore");
+var FileCookieStore = require("tough-cookie-file-store");
 var fs = require("fs");
 var async = require("async");
 
