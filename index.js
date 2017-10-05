@@ -8,12 +8,11 @@ var findmyphone = {
 	init: function(callback) {
 		async.series({
 			checkLoginParams: function(next) {
-				if (!findmyphone.hasOwnProperty("apple_id") || !findmyphone.hasOwnProperty("password")) {
-					return next("Please define apple_id / password");
-				}
-
-				if (findmyphone.apple_id == null || findmyphone.password == null) {
-					return next("Please define apple_id / password");
+				if (((!findmyphone.hasOwnProperty("apple_id") || findmyphone.apple_id == null) ||
+					(!findmyphone.hasOwnProperty("password") || findmyphone.password == null)) &&
+					((!findmyphone.hasOwnProperty("dsWebAuthToken") || findmyphone.dsWebAuthToken == null) ||
+						(!findmyphone.hasOwnProperty("trustToken") || findmyphone.trustToken == null))) {
+					return next("Please define apple_id / password or dsWebAuthToken / trustToken");
 				}
 
 				if (findmyphone.cookieFileStore) {
@@ -85,14 +84,28 @@ var findmyphone = {
 	},
 	login: function(callback) {
 
-		var options = {
-			url: "https://setup.icloud.com/setup/ws/1/login",
-			json: {
-				"apple_id": findmyphone.apple_id,
-				"password": findmyphone.password,
-				"extended_login": true
-			}
-		};
+		var options
+
+		if (findmyphone.hasOwnProperty("dsWebAuthToken") && findmyphone.dsWebAuthToken != null &&
+			findmyphone.hasOwnProperty("trustToken") && findmyphone.trustToken != null) {
+			options = {
+				url: "https://setup.icloud.com/setup/ws/1/login",
+				json: {
+					"dsWebAuthToken": findmyphone.dsWebAuthToken,
+					"trustToken": findmyphone.trustToken,
+					"extended_login": true
+				}
+			};
+		}else{
+			options = {
+				url: "https://setup.icloud.com/setup/ws/1/login",
+				json: {
+					"apple_id": findmyphone.apple_id,
+					"password": findmyphone.password,
+					"extended_login": true
+				}
+			};
+		}
 
 		findmyphone.iRequest.post(options, function(error, response, body) {
 
