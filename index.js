@@ -5,7 +5,7 @@ var fs = require("fs");
 var async = require("async");
 
 var findmyphone = {
-	init: function(callback) {
+	init: function(callback, replaceOnLogin) {
 		async.series({
 			checkLoginParams: function(next) {
 				if (((!findmyphone.hasOwnProperty("apple_id") || findmyphone.apple_id == null) ||
@@ -61,12 +61,12 @@ var findmyphone = {
 					findmyphone.setCookie(function() {
 						findmyphone.login(function(err, res, body) {
 							return callback(err, res, body);
-						});
+						}, replaceOnLogin);
 					});
 				} else {
 					return callback(err, res, body);
 				}
-			});
+			}, replaceOnLogin);
 		});
 
 	},
@@ -82,7 +82,7 @@ var findmyphone = {
 		}
 		callback();
 	},
-	login: function(callback) {
+	login: function(callback, replaceOnLogin) {
 
 		var options
 
@@ -113,13 +113,16 @@ var findmyphone = {
 				return callback("Login Error");
 			}
 
-			findmyphone.onLogin(body, function(err, resp, body) {
-				return callback(err, resp, body);
-			});
-
+			if (replaceOnLogin === undefined) {
+				findmyphone.onLogin(JSON.parse(body), function(err, resp, body) {
+					return callback(err, resp, body);
+				});
+			}else{
+				return callback(error, response, body);
+			}
 		});
 	},
-	checkSession: function(callback) {
+	checkSession: function(callback, replaceOnLogin) {
 
 		var options = {
 			url: "https://setup.icloud.com/setup/ws/1/validate",
@@ -131,10 +134,13 @@ var findmyphone = {
 				return callback("Could not refresh session");
 			}
 
-			findmyphone.onLogin(JSON.parse(body), function(err, resp, body) {
-				return callback(err, resp, body);
-			});
-
+			if (replaceOnLogin === undefined) {
+				findmyphone.onLogin(JSON.parse(body), function(err, resp, body) {
+					return callback(err, resp, body);
+				});
+			}else{
+				return callback(error, response, body);
+			}
 		});
 	},
 	onLogin: function(body, callback) {
@@ -148,7 +154,7 @@ var findmyphone = {
 					"clientContext": {
 						"appName": "iCloud Find (Web)",
 						"appVersion": "2.0",
-						"timezone": "US/Eastern",
+						"timezone": "US/Pacific",
 						"inactiveTime": 3571,
 						"apiVersion": "3.0",
 						"fmly": true
@@ -156,9 +162,72 @@ var findmyphone = {
 				}
 			};
 
+
 			findmyphone.iRequest.post(options, callback);
 		} else {
 			return callback("cannot parse webservice findme url");
+		}
+	},
+	refreshDevice: function(deviceId, callback) {
+		var options = {
+			url: findmyphone.base_path + "/fmipservice/client/web/refreshClient",
+			json: {
+				"clientContext": {
+					"appName": "iCloud Find (Web)",
+					"appVersion": "2.0",
+					"timezone": "US/Pacific",
+					"inactiveTime": 60,
+					"apiVersion": "3.0",
+					"selectedDevice": deviceId,
+					"shouldLocate":true,
+					"fmly": true
+				}
+			}
+		};
+
+		var fnc = function(error, response, body) {
+
+			if (!response || response.statusCode != 200) {
+				return callback(error);
+			}
+
+			var devices = [];
+
+			// Retrieve each device on the account
+			body.content.forEach(function(device) {
+				devices.push({
+					id: device.id,
+					name: device.name,
+					deviceModel: device.deviceModel,
+					modelDisplayName: device.modelDisplayName,
+					deviceDisplayName: device.deviceDisplayName,
+					batteryLevel: device.batteryLevel,
+					isLocating: device.isLocating,
+					lostModeCapable: device.lostModeCapable,
+					location: device.location
+				});
+			});
+
+			callback(error, devices);
+		}
+
+		if (findmyphone.iRequest === undefined) {
+			findmyphone.init(function(error, response, body) {
+				if (!response || response.statusCode != 200) {
+					return callback(error);
+				}
+
+				if (body.hasOwnProperty("webservices") && body.webservices.hasOwnProperty("findme")) {
+					findmyphone.base_path = body.webservices.findme.url;
+
+					options.url = findmyphone.base_path + "/fmipservice/client/web/refreshClient",
+					findmyphone.iRequest.post(options, fnc);
+				} else {
+					return callback("cannot parse webservice findme url");
+				}
+			}, "true");
+		}else{
+			findmyphone.iRequest.post(options, fnc);
 		}
 	},
 	getDevices: function(callback) {
