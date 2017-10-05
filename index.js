@@ -83,7 +83,6 @@ var findmyphone = {
 		callback();
 	},
 	login: function(callback, replaceOnLogin) {
-
 		var options
 
 		if (findmyphone.hasOwnProperty("dsWebAuthToken") && findmyphone.dsWebAuthToken != null &&
@@ -217,6 +216,10 @@ var findmyphone = {
 					return callback(error);
 				}
 
+				if ( typeof(body) === "string"){
+					body = JSON.parse(body)
+				}
+				
 				if (body.hasOwnProperty("webservices") && body.webservices.hasOwnProperty("findme")) {
 					findmyphone.base_path = body.webservices.findme.url;
 
