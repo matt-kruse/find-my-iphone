@@ -11,7 +11,7 @@ var findmyphone = {
 				if (((!findmyphone.hasOwnProperty("apple_id") || findmyphone.apple_id == null) ||
 					(!findmyphone.hasOwnProperty("password") || findmyphone.password == null)) &&
 					((!findmyphone.hasOwnProperty("dsWebAuthToken") || findmyphone.dsWebAuthToken == null) ||
-						(!findmyphone.hasOwnProperty("trustToken") || findmyphone.trustToken == null))) {
+					(!findmyphone.hasOwnProperty("trustToken") || findmyphone.trustToken == null))) {
 					return next("Please define apple_id / password or dsWebAuthToken / trustToken");
 				}
 
