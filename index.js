@@ -5,6 +5,10 @@ var fs = require("fs");
 var async = require("async");
 
 var findmyphone = {
+	idmsaLoginUrl: null,
+	idmsaWidgetKey: null,
+	loginUrl: null,
+	useIdmsa: true,
 	init: function(callback, replaceOnLogin) {
 		async.series({
 			checkLoginParams: function(next) {
@@ -45,7 +49,9 @@ var findmyphone = {
 				findmyphone.iRequest = request.defaults({
 					jar: findmyphone.jar,
 					headers: {
-						"Origin": "https://www.icloud.com"
+						"Origin": "https://www.icloud.com",
+						//"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+						"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
 					}
 				});
 
@@ -56,17 +62,17 @@ var findmyphone = {
 				return callback(err);
 			}
 
-			findmyphone.checkSession(function(err, res, body) {
-				if (err || res.statusCode !== 200 || !body) {
-					findmyphone.setCookie(function() {
+			findmyphone.setCookie(function() {
+				findmyphone.checkSession(function(err, res, body) {
+					if (err || res.statusCode !== 200 || !body) {
 						findmyphone.login(function(err, res, body) {
 							return callback(err, res, body);
 						}, replaceOnLogin);
-					});
-				} else {
-					return callback(err, res, body);
-				}
-			}, replaceOnLogin);
+					} else {
+						return callback(err, res, body);
+					}
+				}, replaceOnLogin);
+			});
 		});
 
 	},
@@ -84,57 +90,248 @@ var findmyphone = {
 	},
 	login: function(callback, replaceOnLogin) {
 		var options
+		
+		if (findmyphone.useIdmsa) {
+			if (findmyphone.hasOwnProperty("verifyCode") && findmyphone.verifyCode != null) {
+				options = {
+					url: "https://idmsa.apple.com/appleauth/auth/verify/trusteddevice/securitycode",
+					json: {
+						"securityCode": {
+							"code": findmyphone.verifyCode
+						}
+					},
+					headers: {
+						"Origin": "https://idmsa.apple.com",
+						"Referer": findmyphone.idmsaLoginUrl,
+						"X-Apple-Widget-Key": findmyphone.idmsaWidgetKey,
+						"X-Apple-ID-Session-Id": findmyphone.sessionId,
+						"scnt": findmyphone.scnt
+					}
+				};
 
-		if (findmyphone.hasOwnProperty("dsWebAuthToken") && findmyphone.dsWebAuthToken != null &&
-			findmyphone.hasOwnProperty("trustToken") && findmyphone.trustToken != null) {
-			options = {
-				url: "https://setup.icloud.com/setup/ws/1/login",
-				json: {
-					"dsWebAuthToken": findmyphone.dsWebAuthToken,
-					"trustToken": findmyphone.trustToken,
-					"extended_login": true
-				}
-			};
-		}else{
-			options = {
-				url: "https://setup.icloud.com/setup/ws/1/login",
-				json: {
-					"apple_id": findmyphone.apple_id,
-					"password": findmyphone.password,
-					"extended_login": true
-				}
-			};
-		}
+				findmyphone.iRequest.post(options, function(error, response, body) {
+					if (!response || (response.statusCode != 200 && response.statusCode != 204)) {
+						return callback("Verify Error");
+					}
 
-		findmyphone.iRequest.post(options, function(error, response, body) {
+					options = {
+						url: "https://idmsa.apple.com/appleauth/auth/2sv/trust",
+						json: {
+							"securityCode": {
+								"code": findmyphone.verifyCode
+							}
+						},
+						headers: {
+							"Origin": "https://idmsa.apple.com",
+							"Referer": findmyphone.idmsaLoginUrl,
+							"X-Apple-Widget-Key": findmyphone.idmsaWidgetKey,
+							"X-Apple-ID-Session-Id": findmyphone.sessionId,
+							"scnt": findmyphone.scnt
+						}
+					};
 
-			if (!response || response.statusCode != 200) {
-				return callback("Login Error");
-			}
+					findmyphone.iRequest.get(options, function(error, response, body) {
+						if (!response || (response.statusCode != 200 && response.statusCode != 204)) {
+							return callback("Trust Error");
+						}
 
-			if (replaceOnLogin === undefined) {
-				findmyphone.onLogin(JSON.parse(body), function(err, resp, body) {
-					return callback(err, resp, body);
+						findmyphone.dsWebAuthToken  = response.headers["x-apple-session-token"];
+						findmyphone.trustToken  = response.headers["x-apple-twosv-trust-token"];
+
+						options = {
+							url: "https://setup.icloud.com/setup/ws/1/accountLogin",
+							json: {
+								"dsWebAuthToken": findmyphone.dsWebAuthToken,
+								"trustToken": findmyphone.trustToken,
+								"extended_login": true
+							}
+						}
+
+						findmyphone.iRequest.post(options, function(error, response, body) {
+							if (!response || response.statusCode != 200) {
+								return callback("Account Login Error");
+							}
+							console.log(response);
+							return callback("Now you can remove Session Token and scnt");
+						});
+					});
 				});
-			}else{
-				return callback(error, response, body);
+			} else {
+				options = {
+					url: "https://idmsa.apple.com/appleauth/auth/signin",
+					json: {
+						"accountName": findmyphone.apple_id,
+						"password": findmyphone.password,
+						"rememberMe": true,
+						"trustTokens": []
+					},
+					headers: {
+						"Origin": "https://idmsa.apple.com",
+						"Referer": findmyphone.idmsaLoginUrl,
+						"X-Apple-Widget-Key": findmyphone.idmsaWidgetKey
+					}
+				}
+
+				if (findmyphone.hasOwnProperty("trustToken") && findmyphone.trustToken != null) {
+					options.json.trustTokens = [findmyphone.trustToken]
+				}
+
+				if (findmyphone.hasOwnProperty("trustTokens") && findmyphone.trustTokens != null) {
+					options.json.trustTokens = findmyphone.trustTokens
+				}
+
+				findmyphone.iRequest.post(options, function(error, response, body) {
+					if (response && response.statusCode == 409) {
+						findmyphone.dsWebAuthToken  = response.headers["x-apple-session-token"];
+						findmyphone.sessionId = response.headers["x-apple-id-session-id"];
+						findmyphone.scnt = response.headers["scnt"];
+
+						options = {
+							url: "https://idmsa.apple.com/appleauth/auth",
+							headers: {
+								"Origin": "https://idmsa.apple.com",
+								"Referer": findmyphone.idmsaLoginUrl,
+								"X-Apple-Widget-Key": findmyphone.idmsaWidgetKey,
+								"X-Apple-ID-Session-Id": findmyphone.sessionId,
+								"scnt": findmyphone.scnt
+							}
+						};
+						
+						findmyphone.iRequest.get(options, function(error, response, body) {
+							if (!response || (response.statusCode != 200)) {
+								return callback("Auth Error");
+							}
+
+							return callback("Insert Verifier with Session Token " + findmyphone.sessionId + " and scnt " + findmyphone.scnt);
+						});
+					} else {
+						if (!response || response.statusCode != 200) {
+							return callback("Login Error");
+						}
+
+						findmyphone.dsWebAuthToken  = response.headers["x-apple-session-token"];
+						
+						options = {
+							url: "https://setup.icloud.com/setup/ws/1/accountLogin",
+							json: {
+								"dsWebAuthToken": findmyphone.dsWebAuthToken,
+								"extended_login": true
+							}
+						}
+
+						findmyphone.iRequest.post(options, function(error, response, body) {
+							if (!response || response.statusCode != 200) {
+								return callback("Account Login Error");
+							}
+
+							if (replaceOnLogin === undefined) {
+								if ( typeof(body) === "string"){
+									body = JSON.parse(body)
+								}
+
+								findmyphone.onLogin(body, function(err, resp, body) {
+									return callback(err, resp, body);
+								});
+							}else{
+								return callback(error, response, body);
+							}
+						});
+					}
+				});
 			}
-		});
+		}else{
+			if (findmyphone.hasOwnProperty("dsWebAuthToken") && findmyphone.dsWebAuthToken != null &&
+				findmyphone.hasOwnProperty("trustToken") && findmyphone.trustToken != null) {
+				options = {
+					url: "https://setup.icloud.com/setup/ws/1/login",
+					json: {
+						"dsWebAuthToken": findmyphone.dsWebAuthToken,
+						"trustToken": findmyphone.trustToken,
+						"extended_login": true
+					}
+				};
+			}else{
+				options = {
+					url: "https://setup.icloud.com/setup/ws/1/login",
+					json: {
+						"apple_id": findmyphone.apple_id,
+						"password": findmyphone.password,
+						"extended_login": true
+					}
+				};
+
+				if (findmyphone.hasOwnProperty("trustToken") && findmyphone.trustToken != null) {
+					options.json.trustTokens = [findmyphone.trustToken]
+				}
+
+				if (findmyphone.hasOwnProperty("trustTokens") && findmyphone.trustTokens != null) {
+					options.json.trustTokens = findmyphone.trustTokens
+				}
+			}
+
+			findmyphone.iRequest.post(options, function(error, response, body) {
+				
+				if (!response || response.statusCode != 200) {
+					return callback("Login Error");
+				}
+
+				if (replaceOnLogin === undefined) {
+					if ( typeof(body) === "string"){
+						body = JSON.parse(body)
+					}
+
+					findmyphone.onLogin(body, function(err, resp, body) {
+						return callback(err, resp, body);
+					});
+				}else{
+					return callback(error, response, body);
+				}
+			});
+		}
 	},
 	checkSession: function(callback, replaceOnLogin) {
-
 		var options = {
 			url: "https://setup.icloud.com/setup/ws/1/validate",
 		};
 		
 		findmyphone.iRequest.post(options, function(error, response, body) {
+			
+			if (body && typeof(body) === "string"){
+				body = JSON.parse(body)
+			}
+			
+			if (body.hasOwnProperty("trustTokens")){
+				findmyphone.trustTokens = body.trustTokens;
+			}
+			findmyphone.idmsaLoginUrl = body.configBag.urls.accountLoginUI;
+
+			if(findmyphone.idmsaLoginUrl != null){
+				var url = findmyphone.idmsaLoginUrl.split('?');
+				var qstr = url[1];
+
+				var query = {};
+				var a = (qstr[0] === '?' ? qstr.substr(1) : qstr).split('&');
+				for (var i = 0; i < a.length; i++) {
+					var b = a[i].split('=');
+					query[decodeURIComponent(b[0])] = decodeURIComponent(b[1] || '');
+				}
+
+				findmyphone.idmsaWidgetKey = query.widgetKey;
+			}
+
+			findmyphone.loginUrl = body.configBag.urls.accountLogin;
+			
 
 			if (!response || response.statusCode != 200) {
 				return callback("Could not refresh session");
 			}
 
 			if (replaceOnLogin === undefined) {
-				findmyphone.onLogin(JSON.parse(body), function(err, resp, body) {
+				if ( typeof(body) === "string"){
+					body = JSON.parse(body)
+				}
+
+				findmyphone.onLogin(body, function(err, resp, body) {
 					return callback(err, resp, body);
 				});
 			}else{
@@ -143,9 +340,9 @@ var findmyphone = {
 		});
 	},
 	onLogin: function(body, callback) {
-
+		console.log(body);
 		if (body.hasOwnProperty("webservices") && body.webservices.hasOwnProperty("findme")) {
-			findmyphone.base_path = body.webservices.findme.url;
+			findmyphone.base_path = body.webservices.findme.url; //.replace(":443", "");
 
 			options = {
 				url: findmyphone.base_path + "/fmipservice/client/web/initClient",
@@ -160,7 +357,6 @@ var findmyphone = {
 					}
 				}
 			};
-
 
 			findmyphone.iRequest.post(options, callback);
 		} else {
