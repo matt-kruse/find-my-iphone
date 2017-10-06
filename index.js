@@ -90,7 +90,7 @@ var findmyphone = {
 	},
 	login: function(callback, replaceOnLogin) {
 		var options
-		
+
 		if (findmyphone.useIdmsa) {
 			if (findmyphone.hasOwnProperty("verifyCode") && findmyphone.verifyCode != null) {
 				options = {
@@ -151,7 +151,7 @@ var findmyphone = {
 							if (!response || response.statusCode != 200) {
 								return callback("Account Login Error");
 							}
-							console.log(response);
+							
 							return callback("Now you can remove Session Token and scnt");
 						});
 					});
@@ -340,7 +340,6 @@ var findmyphone = {
 		});
 	},
 	onLogin: function(body, callback) {
-		console.log(body);
 		if (body.hasOwnProperty("webservices") && body.webservices.hasOwnProperty("findme")) {
 			findmyphone.base_path = body.webservices.findme.url; //.replace(":443", "");
 
