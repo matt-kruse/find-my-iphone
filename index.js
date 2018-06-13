@@ -152,7 +152,9 @@ var findmyphone = {
 								return callback("Account Login Error");
 							}
 							
-							return callback("Now you can remove Session Token and scnt");
+							findmyphone.sessionId = undefined;
+							findmyphone.scnt = undefined;
+							return callback(error, response, body);
 						});
 					});
 				});
