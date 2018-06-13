@@ -396,6 +396,7 @@ var findmyphone = {
 					modelDisplayName: device.modelDisplayName,
 					deviceDisplayName: device.deviceDisplayName,
 					batteryLevel: device.batteryLevel,
+					batteryStatus: device.batteryStatus,
 					isLocating: device.isLocating,
 					lostModeCapable: device.lostModeCapable,
 					location: device.location
