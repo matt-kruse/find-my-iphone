@@ -208,6 +208,9 @@ var findmyphone = {
 						});
 					} else {
 						if (!response || response.statusCode != 200) {
+							if (response.statusCode === 412) {
+								return callback('Please login to your account and accept Apple\'s terms of service.');
+							}
 							return callback("Login Error");
 						}
 
