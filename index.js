@@ -4,6 +4,8 @@ var FileCookieStore = require("tough-cookie-file-store");
 var fs = require("fs");
 var async = require("async");
 
+//declare -x NODE_TLS_REJECT_UNAUTHORIZED="0"
+//declare -x HTTPS_PROXY="http://localhost:8888"
 var findmyphone = {
 	idmsaLoginUrl: null,
 	idmsaWidgetKey: null,
@@ -120,12 +122,8 @@ var findmyphone = {
 
 					options = {
 						url: "https://idmsa.apple.com/appleauth/auth/2sv/trust",
-						json: {
-							"securityCode": {
-								"code": findmyphone.verifyCode
-							}
-						},
 						headers: {
+							"Accept": 'application/json',
 							"Origin": "https://idmsa.apple.com",
 							"Referer": findmyphone.idmsaLoginUrl,
 							"X-Apple-Widget-Key": findmyphone.idmsaWidgetKey,
