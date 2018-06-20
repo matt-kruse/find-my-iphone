@@ -132,7 +132,8 @@ var findmyphone = {
 
 					findmyphone.iRequest.get(options, function(error, response, body) {
 						if (!response || (response.statusCode != 200 && response.statusCode != 204)) {
-							return callback("Trust Error");
+							let err = 'Trust Error';
+							return callback(error ? error : err, response, body);
 						}
 
 						findmyphone.dsWebAuthToken  = response.headers["x-apple-session-token"];
@@ -149,7 +150,8 @@ var findmyphone = {
 
 						findmyphone.iRequest.post(options, function(error, response, body) {
 							if (!response || response.statusCode != 200) {
-								return callback("Account Login Error");
+								let err = 'Account Login Error';
+								return callback(error ? error : err, response, body);
 							}
 							
 							findmyphone.sessionId = undefined;
@@ -201,7 +203,8 @@ var findmyphone = {
 						
 						findmyphone.iRequest.get(options, function(error, response, body) {
 							if (!response || (response.statusCode != 200)) {
-								return callback("Auth Error");
+								let err = 'Auth Error';
+								return callback(error ? error : err, response, body);
 							}
 
 							return callback("Insert Verifier with Session Token " + findmyphone.sessionId + " and scnt " + findmyphone.scnt);
