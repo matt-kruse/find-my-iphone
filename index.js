@@ -111,7 +111,11 @@ var findmyphone = {
 
 				findmyphone.iRequest.post(options, function(error, response, body) {
 					if (!response || (response.statusCode != 200 && response.statusCode != 204)) {
-						return callback("Verify Error");
+						if (response.statusCode === 412) {
+							return callback('Please login to your account and accept Apple\'s terms of service.');
+						}
+						let err = 'Verify Error';
+						return callback(error ? error : err, response, body);
 					}
 
 					options = {
