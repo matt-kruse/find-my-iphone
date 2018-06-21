@@ -37,10 +37,11 @@ var findmyphone = {
 				}
 			},
 			cookie: function(next) {
+				if (findmyphone.jar) {
+					return next();
+				}
 				if (findmyphone.cookieFileStore) {
-					var CookieJar = require("tough-cookie").CookieJar;
-					var Store = new FileCookieStore(findmyphone.cookieFileStore);
-					var j = new CookieJar(Store);
+					let Store = new FileCookieStore(findmyphone.cookieFileStore);
 					findmyphone.jar = request.jar(Store);
 				} else {
 					findmyphone.jar = request.jar();
@@ -52,7 +53,6 @@ var findmyphone = {
 					jar: findmyphone.jar,
 					headers: {
 						"Origin": "https://www.icloud.com",
-						//"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
 						"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36"
 					}
 				});
@@ -64,31 +64,17 @@ var findmyphone = {
 				return callback(err);
 			}
 
-			findmyphone.setCookie(function() {
-				findmyphone.checkSession(function(err, res, body) {
-					if (err || res.statusCode !== 200 || !body) {
-						findmyphone.login(function(err, res, body) {
-							return callback(err, res, body);
-						}, replaceOnLogin);
-					} else {
+			findmyphone.checkSession(function(err, res, body) {
+				if (err || res.statusCode !== 200 || !body) {
+					findmyphone.login(function(err, res, body) {
 						return callback(err, res, body);
-					}
-				}, replaceOnLogin);
-			});
+					}, replaceOnLogin);
+				} else {
+					return callback(err, res, body);
+				}
+			}, replaceOnLogin);
 		});
 
-	},
-	setCookie: function(callback) {
-		findmyphone.jar = null;
-		if (findmyphone.cookieFileStore) {
-			var j = request.jar(new FileCookieStore(findmyphone.cookieFileStore));
-			findmyphone.jar = request.jar({
-				jar: j
-			});
-		} else {
-			findmyphone.jar = request.jar();
-		}
-		callback();
 	},
 	login: function(callback, replaceOnLogin) {
 		var options
@@ -337,10 +323,6 @@ var findmyphone = {
 			}
 
 			if (replaceOnLogin === undefined) {
-				if ( typeof(body) === "string"){
-					body = JSON.parse(body)
-				}
-
 				findmyphone.onLogin(body, function(err, resp, body) {
 					return callback(err, resp, body);
 				});
