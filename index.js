@@ -101,7 +101,7 @@ var findmyphone = {
 						"timezone": "US/Eastern",
 						"inactiveTime": 3571,
 						"apiVersion": "3.0",
-						"fmly": true
+						"fmly": false  // Only your devices, not family members'!
 					}
 				}
 			};
