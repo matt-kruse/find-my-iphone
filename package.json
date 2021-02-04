@@ -1,6 +1,6 @@
 {
   "name": "find-my-iphone",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Trigger Apple's Find My iPhone feature from code",
   "main": "index.js",
   "scripts": {
