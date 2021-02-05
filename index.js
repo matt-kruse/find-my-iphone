@@ -3,6 +3,9 @@ var util = require("util");
 
 var findmyphone = {
 	init: function(callback) {
+		if (!findmyphone.hasOwnProperty("last_apple_id")) {
+			findmyphone.last_apple_id = null;
+		}
 
 		if (!findmyphone.hasOwnProperty("apple_id") || !findmyphone.hasOwnProperty("password")) {
 			return callback("Please define apple_id / password");
@@ -12,9 +15,10 @@ var findmyphone = {
 			return callback("Please define apple_id / password");
 		}
 
-		var newLogin = !findmyphone.hasOwnProperty("jar");
+		var newLogin = !findmyphone.hasOwnProperty("jar") && findmyphone.last_apple_id != findmyphone.apple_id;
 		if (newLogin) {
 			findmyphone.jar = request.jar();
+			findmyphone.last_apple_id = findmyphone.apple_id;
 		}
 
 		findmyphone.iRequest = request.defaults({
@@ -140,10 +144,12 @@ var findmyphone = {
 		});
 	},
 	alertDevice: function(deviceId, callback) {
+		var message = (findmyphone.hasOwnProperty("message") && findmyphone.message != null) ? findmyphone.message : "Find My iPhone Alert";
+
 		var options = {
 			url: findmyphone.base_path + "/fmipservice/client/web/playSound",
 			json: {
-				"subject": "Amazon Echo Find My iPhone Alert",
+				"subject": message,
 				"device": deviceId
 			}
 		};
@@ -211,10 +217,11 @@ var findmyphone = {
 };
 
 // legacy
-var find_my_iphone = function(apple_id, password, device_name, callback) {
+var find_my_iphone = function(apple_id, password, device_name, message, callback) {
 
 	findmyphone.apple_id = apple_id;
 	findmyphone.password = password;
+        findmyphone.message = message;
 
 	findmyphone.getDevices(function(error, devices) {
 		if (error) {
