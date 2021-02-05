@@ -1,50 +1,87 @@
 var request = require("request");
 var util = require("util");
+var FileCookieStore = require("tough-cookie-file-store");
+var fs = require("fs");
+var async = require("async");
 
 var findmyphone = {
 	init: function(callback) {
+		async.series({
+			checkLoginParams: function(next) {
+				if (!findmyphone.hasOwnProperty("apple_id") || !findmyphone.hasOwnProperty("password")) {
+					return next("Please define apple_id / password");
+				}
 
-		if (!findmyphone.hasOwnProperty("apple_id") || !findmyphone.hasOwnProperty("password")) {
-			return callback("Please define apple_id / password");
-		}
+				if (findmyphone.apple_id == null || findmyphone.password == null) {
+					return next("Please define apple_id / password");
+				}
 
-		if (findmyphone.apple_id == null || findmyphone.password == null) {
-			return callback("Please define apple_id / password");
-		}
-
-		var newLogin = !findmyphone.hasOwnProperty("jar");
-		if (newLogin) {
-			findmyphone.jar = request.jar();
-		}
-
-		findmyphone.iRequest = request.defaults({
-			jar: findmyphone.jar,
-			headers: {
-				"Origin": "https://www.icloud.com"
-			}
-		});
-
-		if (newLogin) {
-			findmyphone.login(function(err, res, body) {
-				return callback(err, res, body);
-			});
-		} else {
-
-			findmyphone.checkSession(function(err, res, body) {
-				if (err) {
-					//session is dead, start new
-					findmyphone.jar = null;
-					findmyphone.jar = request.jar();
-
-					findmyphone.login(function(err, res, body) {
-						return callback(err, res, body);
+				if (findmyphone.cookieFileStore) {
+					var path = findmyphone.cookieFileStore;
+					fs.exists(path, function(exists) {
+						if (!exists) {
+							fs.open(path, 'w', function(err) {
+								return next(err);
+							});
+						} else {
+							return next();
+						}
 					});
 				} else {
-					console.log("reusing session");
+					return next();
+				}
+			},
+			cookie: function(next) {
+				if (findmyphone.cookieFileStore) {
+					var CookieJar = require("tough-cookie").CookieJar;
+					var Store = new FileCookieStore(findmyphone.cookieFileStore);
+					var j = new CookieJar(Store);
+					findmyphone.jar = request.jar(Store);
+				} else {
+					findmyphone.jar = request.jar();
+				}
+				return next();
+			},
+			defaults: function(next) {
+				findmyphone.iRequest = request.defaults({
+					jar: findmyphone.jar,
+					headers: {
+						"Origin": "https://www.icloud.com"
+					}
+				});
+
+				return next();
+			}
+		}, function(err) {
+			if (err) {
+				return callback(err);
+			}
+
+			findmyphone.checkSession(function(err, res, body) {
+				if (err || res.statusCode !== 200 || !body) {
+					findmyphone.setCookie(function() {
+						findmyphone.login(function(err, res, body) {
+							return callback(err, res, body);
+						});
+					});
+				} else {
 					return callback(err, res, body);
 				}
 			});
+		});
+
+	},
+	setCookie: function(callback) {
+		findmyphone.jar = null;
+		if (findmyphone.cookieFileStore) {
+			var j = request.jar(new FileCookieStore(findmyphone.cookieFileStore));
+			findmyphone.jar = request.jar({
+				jar: j
+			});
+		} else {
+			findmyphone.jar = request.jar();
 		}
+		callback();
 	},
 	login: function(callback) {
 
@@ -74,7 +111,7 @@ var findmyphone = {
 		var options = {
 			url: "https://setup.icloud.com/setup/ws/1/validate",
 		};
-
+		
 		findmyphone.iRequest.post(options, function(error, response, body) {
 
 			if (!response || response.statusCode != 200) {
@@ -143,7 +180,7 @@ var findmyphone = {
 		var options = {
 			url: findmyphone.base_path + "/fmipservice/client/web/playSound",
 			json: {
-				"subject": "Amazon Echo Find My iPhone Alert",
+				"subject": "Find My iPhone Alert",
 				"device": deviceId
 			}
 		};
@@ -155,8 +192,12 @@ var findmyphone = {
 			return callback("No location in device");
 		}
 
-		var googleUrl = "http://maps.googleapis.com/maps/api/geocode/json" +
+		var googleUrl = "https://maps.googleapis.com/maps/api/geocode/json" +
 			"?latlng=%d,%d&sensor=true";
+
+		if (process.env.Google_Maps_API_Key) {
+			googleUrl += "&key=" + process.env.Google_Maps_API_Key
+		}
 
 		googleUrl =
 			util.format(googleUrl,
@@ -178,14 +219,17 @@ var findmyphone = {
 			}
 			return callback(err);
 		});
-
 	},
 	getDistanceOfDevice: function(device, myLatitude, myLongitude, callback) {
 		if (device.location) {
 
-			var googleUrl = "http://maps.googleapis.com/maps/api/distancematrix/json" +
+			var googleUrl = "https://maps.googleapis.com/maps/api/distancematrix/json" +
 				"?origins=%d,%d&destinations=%d,%d&mode=driving&sensor=false";
 
+			if (process.env.Google_Maps_API_Key) {
+				googleUrl += "&key=" + process.env.Google_Maps_API_Key
+			}   
+					
 			googleUrl =
 				util.format(googleUrl, myLatitude, myLongitude,
 					device.location.latitude, device.location.longitude);

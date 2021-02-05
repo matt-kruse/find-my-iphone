@@ -17,6 +17,7 @@ describe('Logged in: ', function() {
 
 		icloud.apple_id = process.env.apple_id;
 		icloud.password = process.env.apple_password;
+		icloud.cookieFileStore = "icloud.cookie";
 
 		assert(icloud.apple_id);
 		assert(icloud.password);
@@ -25,9 +26,9 @@ describe('Logged in: ', function() {
 			assert(!error);
 			assert(devices);
 			assert(devices.length > 0);
+
 			devices.forEach(function(d) {
 				if (device == undefined && d.location && d.lostModeCapable) {
-					console.log(d);
 					device = d;
 				}
 			});
