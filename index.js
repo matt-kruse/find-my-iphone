@@ -139,14 +139,26 @@ var findmyphone = {
 			callback(error, devices);
 		});
 	},
-	alertDevice: function(deviceId, callback) {
-		var options = {
-			url: findmyphone.base_path + "/fmipservice/client/web/playSound",
-			json: {
-				"subject": "Amazon Echo Find My iPhone Alert",
-				"device": deviceId
+	alertDevice: function(options, callback) {
+		var url = findmyphone.base_path + "/fmipservice/client/web/playSound";
+		if ('object' === typeof(options) && options.hasOwnProperty('deviceID')) {
+			options = {
+				url: url,
+				json: {
+					"subject": options.subject || "Amazon Echo Find My iPhone Alert",
+					"device": options.deviceID
+				}
 			}
-		};
+		}
+		else { // backwards compatibility for deviceId string provided
+			options = {
+				url: url,
+				json: {
+					"subject": "Amazon Echo Find My iPhone Alert",
+					"device": options
+				}
+			};
+		}
 		findmyphone.iRequest.post(options, callback);
 	},
 	getLocationOfDevice: function(device, callback) {
