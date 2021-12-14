@@ -21,7 +21,9 @@
   },
   "license": "MIT",
   "dependencies": {
-    "request": "^2.57.0",
-    "tough-cookie": "^1.2.0"
+    "async": "^2.6.1",
+    "request": "^2.87.0",
+    "tough-cookie": "^2.4.2",
+    "tough-cookie-file-store": "^1.2.0"
   }
 }
